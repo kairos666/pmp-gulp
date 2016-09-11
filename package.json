@@ -2,7 +2,7 @@
   "name": "pmp-gulp",
   "version": "0.0.1",
   "description": "core gulp process for pmp-engine",
-  "main": "index.js",
+  "main": "gulpfile.js",
   "scripts": {
     "start": "gulp --standalone",
     "test": "echo \"Error: no test specified\" && exit 1"
