@@ -10,10 +10,10 @@ var gulpConf            = require('./tasksRunnerFiles/gulpConfigChunks');
 /* ===========================================================================
   DETECT STANDALONE MODE
 =========================================================================== */
-let getExternalConfig   = true;
+let isStandAlone   = true;
 process.argv.map(function(arg){
   if(arg === '--standalone'){
-    getExternalConfig = false;
+    isStandAlone = false;
     console.log('STANDALONE MODE');
   }
   console.log(arg)
@@ -105,9 +105,8 @@ gulp.task('watch', ['run-bs', 'build:all'], function(){
 /* == DEFAULT TASK == */
 gulp.task('default', function(cb) {
   cb();
-  if(process.send) process.send({type: 'INITIATED', msg:'awaiting config'});
-  if(getExternalConfig) {
-    console.log({type: 'INITIATED', msg:'awaiting config'});
+  if(isStandAlone) {
+    if(process.send) process.send({type: 'INITIATED', msg:'awaiting config'});
   } else {
     //start proxy server with config described in gulpConfigChunks
     gulp.task('run-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').run(browserSync, bsConfigExtend(gulpConf.browserSyncCfg)));
