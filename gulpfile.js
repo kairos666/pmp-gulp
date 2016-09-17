@@ -105,7 +105,7 @@ gulp.task('watch', ['run-bs', 'build:all'], function(){
 /* == DEFAULT TASK == */
 gulp.task('default', function(cb) {
   cb();
-  //if(process.send) process.send({type: 'INITIATED', msg:'awaiting config'});
+  if(process.send) process.send({type: 'INITIATED', msg:'awaiting config'});
   if(getExternalConfig) {
     console.log({type: 'INITIATED', msg:'awaiting config'});
   } else {
