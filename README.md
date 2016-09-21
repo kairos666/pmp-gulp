@@ -1,3 +1,5 @@
+[![npm version](https://badge.fury.io/js/pmp-gulp.svg)](https://badge.fury.io/js/pmp-gulp)
+
 # pmp-gulp
 Core processing for PMP-engine
 
