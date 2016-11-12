@@ -73,6 +73,9 @@ let browserSyncCfg = {
                 $('body').addClass('sample-modifier-rules2');
             `] 
         }
+    ],
+    plugins: [
+        'pmp-plugin-staples'
     ]
 }
 

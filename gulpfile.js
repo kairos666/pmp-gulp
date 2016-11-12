@@ -3,9 +3,34 @@
 let gulp                = require('gulp'),
     gulpPlugins         = require('gulp-load-plugins')(),
     runSequence         = require('run-sequence'),
-    browserSync         = require('browser-sync');
+    browserSync         = require('browser-sync'),
+    Q                   = require('q');
 
-var gulpConf            = require('./tasksRunnerFiles/gulpConfigChunks');
+let gulpConf            = require('./tasksRunnerFiles/gulpConfigChunks');
+
+/* ===========================================================================
+  PLUGIN LIST PROMISER
+=========================================================================== */
+let pluginsPromise = () => {
+  let deferredPluginList = Q.defer();
+  require('child_process').exec('npm ls --json', function(err, stdout, stderr) {
+    deferredPluginList.resolve(JSON.parse(stdout));
+  });
+
+  return deferredPluginList.promise.then(packageJson => {
+    // list all packages
+    let packageArray = [];
+    for (var dep in packageJson.dependencies) {
+      packageArray.push(dep);
+    }
+
+    //filter out pmp plugins
+    return packageArray.filter(pack => (pack.indexOf('pmp-plugin') === 0));
+  });
+};
+
+// available plugin list promise
+let pluginList = pluginsPromise();
 
 /* ===========================================================================
   DETECT STANDALONE MODE
@@ -43,6 +68,7 @@ let bsConfigExtend = function(basicConfig){
 /* ===========================================================================
   TARGET PLUGIN (react render bits and helper functions)
 =========================================================================== */
+//TODO refactor this to use new plugin system
 let targetPlugin = {
   components: require('./plugins/reactCmpnt/liferay-v7'),
   helpers: require('./plugins/helpers/liferay-v7-rules-helpers')
@@ -109,9 +135,7 @@ gulp.task('default', function(cb) {
     if(process.send) process.send({type: 'INITIATED', msg:'awaiting config'});
   } else {
     //start proxy server with config described in gulpConfigChunks
-    gulp.task('run-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').run(browserSync, bsConfigExtend(gulpConf.browserSyncCfg)));
-    gulp.task('reload-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').reload(browserSync));
-    gulp.run('watch');
+    pluginList.then(pmpGulpLaunch);
   }
 });
 
@@ -127,9 +151,31 @@ process.on('message', function (data) {
         
             /* == BROWSER SYNC TASKS == */
             //start proxy server with targeteted config
-            gulp.task('run-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').run(browserSync, bsConfigExtend(gulpConf.browserSyncCfg)));
-            gulp.task('reload-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').reload(browserSync));
-            gulp.run('watch');
+            pluginList.then(pmpGulpLaunch);
         break;
     };
 });
+
+/* ===========================================================================
+  PMP GULP LAUNCHER (ensure pluginlist & config are ready before doing so)
+=========================================================================== */
+let pmpGulpLaunch = (availablePlugins) => {
+  // resolve plugins
+  let pluginBundle = pluginBuilder(gulpConf.browserSyncCfg.plugins, availablePlugins);
+
+  // launch server
+  gulp.task('run-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').run(browserSync, bsConfigExtend(gulpConf.browserSyncCfg)));
+  gulp.task('reload-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').reload(browserSync));
+  gulp.run('watch');
+};
+
+/* ===========================================================================
+  PLUGIN BUILDER
+=========================================================================== */
+let pluginBuilder = (pluginConfig, availablePlugins) => {
+  
+  console.log(pluginConfig);
+  console.log(availablePlugins);
+
+  return true
+};

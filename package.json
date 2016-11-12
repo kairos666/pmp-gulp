@@ -43,6 +43,7 @@
     "gulp-uglify": "^1.2.0",
     "posthtml-lorem": "^1.0.0",
     "posthtml-static-react": "^1.0.1",
+    "q": "^1.4.1",
     "react": "^0.14.8",
     "route-pattern": "0.0.6",
     "run-sequence": "^1.1.4"
