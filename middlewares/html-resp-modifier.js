@@ -48,12 +48,32 @@ let pimpIt = function(initialResData, rules){
     if(DEBUG) { console.log('START RESPONSE PIMPING'); }
     
     /* load and parse html string */
-    var $ = cheerio.load(initialResData);
+    let $ = cheerio.load(initialResData);
+
+    //plugin test
+    // let helpers = {};
+    // let plugin = require('pmp-plugin-staples');
+    // helpers[plugin.ruleHelperObjectName] = plugin.ruleHelpers;
+    // helpers.staples.init($);
+    
+    // let ruleModification = `
+    //     helpers.staples.baseInjects();
+    // `;
+
+    // try {
+    //     eval(ruleModification); 
+    // } catch (e) {
+    //     console.log(e);
+    // };
     
     /* apply rules transformations */
     rules.forEach(function(rule){
         rule.modifs.forEach(function(modif){
-            eval(modif.toString());
+            try {
+                eval(modif.toString());
+            } catch (e) {
+                console.log(e);
+            };
         });
     });
 
