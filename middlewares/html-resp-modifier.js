@@ -3,6 +3,7 @@
 let DEBUG         = false;
 let cheerio       = require('cheerio');
 let routePattern  = require('route-pattern');
+let helpers;
 
 /* ===========================================================================
   UTILITY FUNCTIONS
@@ -50,21 +51,10 @@ let pimpIt = function(initialResData, rules){
     /* load and parse html string */
     let $ = cheerio.load(initialResData);
 
-    //plugin test
-    // let helpers = {};
-    // let plugin = require('pmp-plugin-staples');
-    // helpers[plugin.ruleHelperObjectName] = plugin.ruleHelpers;
-    // helpers.staples.init($);
-    
-    // let ruleModification = `
-    //     helpers.staples.baseInjects();
-    // `;
-
-    // try {
-    //     eval(ruleModification); 
-    // } catch (e) {
-    //     console.log(e);
-    // };
+    //plugins helpers init
+    Object.keys(helpers).forEach(helperName => {
+        helpers[helperName].init($);
+    });
     
     /* apply rules transformations */
     rules.forEach(function(rule){
@@ -174,7 +164,9 @@ let modifyResponse = function(rules, req, res, force) {
 /* ===========================================================================
   MIDDLEWARE
 =========================================================================== */
-module.exports = function(modsData) { return function(req, res, next) {
+module.exports = function(modsData, pluginsHelpersBundle) { return function(req, res, next) {
+  // assign helpers
+  helpers = pluginsHelpersBundle;
 
   //quick exit when no matching pimp rules, otherwise proceed to modification
   var matchingMods = modsData.filter(obj => { return filterPimpCmds(obj, req) });

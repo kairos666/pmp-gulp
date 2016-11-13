@@ -49,8 +49,7 @@ let bsConfigExtend = function(basicConfig, pluginsHelpersBundle){
   var extendedConfig = Object.assign({}, basicConfig.bsOptions);
 
   //add modifier middleware + pimp commands
-  console.log(pluginsHelpersBundle);
-  extendedConfig.middleware.push(require('./middlewares/html-resp-modifier')(basicConfig.pimpCmds));
+  extendedConfig.middleware.push(require('./middlewares/html-resp-modifier')(basicConfig.pimpCmds, pluginsHelpersBundle));
 
   //switch between creating a new browser tab OR reusing the existing one (restart cases)
   process.argv.map(function(arg){
