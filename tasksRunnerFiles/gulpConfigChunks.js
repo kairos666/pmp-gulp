@@ -59,10 +59,9 @@ let browserSyncCfg = {
         { 
             url:'*/viewarticle*',
             modifs:[`
-                $('head').append('<link rel="stylesheet" type="text/css" href="/css/main.min.css">');
-                $('body').append('<script type="text/javascript" src="/js/main.min.js"></script>');
+                helpers.staples.baseInjects();
                 $('body').addClass('sample-modifier-rules');
-                $('.container').html('<p>replaced text</p>');
+                $('.container').html(helpers.staples.htmlPartial('sample-staples.html'));
             `] 
         },
         { 
@@ -76,10 +75,7 @@ let browserSyncCfg = {
     ],
     plugins: [
         'pmp-plugin-staples',
-        'pmp-plugin-liferay-v7',
-        'pmp-plugin-jcms',
-        'pmp-plugin-wordpress',
-        'pmp-plugin-bootstrap-v3'
+        'pmp-plugin-liferay-v7'
     ]
 }
 
