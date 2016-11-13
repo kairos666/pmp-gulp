@@ -33,7 +33,7 @@ let scriptsCfg = {
 */
 let htmlCfg = {
     htmlFilePaths: ['src/partials/**/*.html'],
-    postHtmlCfg: ['posthtml-lorem', 'posthtml-static-react'],
+    postHtmlCfg: ['posthtml-static-react'],
     htmlDestPath: 'dist/html/'
 }
 
