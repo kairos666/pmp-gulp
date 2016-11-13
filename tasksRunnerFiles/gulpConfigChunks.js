@@ -79,7 +79,7 @@ let browserSyncCfg = {
         'pmp-plugin-liferay-v7',
         'pmp-plugin-jcms',
         'pmp-plugin-wordpress',
-        'pmp-plugin-bootstrap-v3',
+        'pmp-plugin-bootstrap-v3'
     ]
 }
 
