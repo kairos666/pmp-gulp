@@ -75,7 +75,11 @@ let browserSyncCfg = {
         }
     ],
     plugins: [
-        'pmp-plugin-staples'
+        'pmp-plugin-staples',
+        'pmp-plugin-liferay-v7',
+        'pmp-plugin-jcms',
+        'pmp-plugin-wordpress',
+        'pmp-plugin-bootstrap-v3',
     ]
 }
 
