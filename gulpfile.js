@@ -63,15 +63,6 @@ let bsConfigExtend = function(basicConfig, pluginsHelpersBundle){
 }
 
 /* ===========================================================================
-  TARGET PLUGIN (react render bits and helper functions)
-=========================================================================== */
-//TODO refactor this to use new plugin system
-let targetPlugin = {
-  components: require('./plugins/reactCmpnt/liferay-v7'),
-  helpers: require('./plugins/helpers/liferay-v7-rules-helpers')
-}
-
-/* ===========================================================================
   GULP TASKS
 =========================================================================== */
 /* == CLEANING TASKS == */
@@ -161,7 +152,7 @@ let pmpGulpLaunch = (availablePlugins) => {
 
     /* == HTML TASKS == */
     // render static react cmpnts
-    gulp.task('process-html', require('./tasksRunnerFiles/tasks/html-tasks')(gulp, gulpPlugins, gulpConf.htmlCfg, targetPlugin));
+    gulp.task('process-html', require('./tasksRunnerFiles/tasks/html-tasks')(gulp, gulpPlugins, gulpConf.htmlCfg, pluginsBundle.htmlHelpers));
 
     /* == BrowserSync TASKS == */
     gulp.task('run-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').run(browserSync, finalConfig));
@@ -193,6 +184,10 @@ let pluginBuilderPromise = (pluginConfig, availablePlugins) => {
     // add to helper bundle
     let helpers = Object.assign({}, pluginPackage.ruleHelpers);
     if(Object.keys(helpers).length !== 0) pluginsBundle.helpers[pluginPackage.ruleHelperObjectName] = helpers;
+
+    // add to HTML helper bundle | clone plugin components & add components to existing ones (beware in name collision)
+    let htmlHelpers = Object.assign({}, pluginPackage.htmlHelpers);
+    if(Object.keys(htmlHelpers).length !== 0) pluginsBundle.htmlHelpers = Object.assign(pluginsBundle.htmlHelpers, htmlHelpers);
   });
   
   deferredPluginBundle.resolve(pluginsBundle);
