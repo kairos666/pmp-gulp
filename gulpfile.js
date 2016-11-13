@@ -93,10 +93,6 @@ gulp.task('compile-css-and-livereload', require('./tasksRunnerFiles/tasks/styles
 // lint + soucemaps + concat + minify
 gulp.task('process-js', require('./tasksRunnerFiles/tasks/scripts-tasks')(gulp, gulpPlugins, gulpConf.scriptsCfg));
 
-/* == HTML TASKS == */
-// render static react cmpnts
-gulp.task('process-html', require('./tasksRunnerFiles/tasks/html-tasks')(gulp, gulpPlugins, gulpConf.htmlCfg, targetPlugin));
-
 /* == BUILD TASKS == */
 //generate dist files
 gulp.task('build:styles', (cb) => {
@@ -163,10 +159,16 @@ let pmpGulpLaunch = (availablePlugins) => {
     // PIMP configuration extend & plugins bundle binding
     let finalConfig = bsConfigExtend(gulpConf.browserSyncCfg, pluginsBundle.helpers);
 
-    // launch server
-    if(process.send) process.send({type: 'CONFIG READY', msg:'launching server'});
+    /* == HTML TASKS == */
+    // render static react cmpnts
+    gulp.task('process-html', require('./tasksRunnerFiles/tasks/html-tasks')(gulp, gulpPlugins, gulpConf.htmlCfg, targetPlugin));
+
+    /* == BrowserSync TASKS == */
     gulp.task('run-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').run(browserSync, finalConfig));
     gulp.task('reload-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').reload(browserSync));
+    
+    // launch server
+    if(process.send) process.send({type: 'CONFIG READY', msg:'launching server'});
     gulp.run('watch');
   }).done();
 };
