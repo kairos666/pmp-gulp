@@ -1,6 +1,6 @@
 {
   "name": "pmp-gulp",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "core gulp process for pmp-engine",
   "main": "gulpfile.js",
   "scripts": {
