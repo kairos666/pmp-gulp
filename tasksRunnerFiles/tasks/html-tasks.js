@@ -1,8 +1,8 @@
 'use strict'
 
-module.exports = function(gulp, plugins, htmlCfg, targetPlugin) {
+module.exports = function(gulp, plugins, htmlCfg, htmlHelpers) {
     //organize available react component
-    var reactComponents    = (targetPlugin.components)? targetPlugin.components : {};
+    var reactComponents    = (htmlHelpers)? htmlHelpers : {};
     var reactComponentsKey = [];
     for(var key in reactComponents) {
       reactComponentsKey.push(key);

@@ -3,9 +3,31 @@
 let gulp                = require('gulp'),
     gulpPlugins         = require('gulp-load-plugins')(),
     runSequence         = require('run-sequence'),
-    browserSync         = require('browser-sync');
+    browserSync         = require('browser-sync'),
+    Q                   = require('q');
 
-var gulpConf            = require('./tasksRunnerFiles/gulpConfigChunks');
+let gulpConf            = require('./tasksRunnerFiles/gulpConfigChunks');
+
+/* ===========================================================================
+  PLUGIN LIST PROMISER
+=========================================================================== */
+let pluginsPromise = () => {
+  let deferredPluginList = Q.defer();
+  require('child_process').exec('npm ls --json', function(err, stdout, stderr) {
+    deferredPluginList.resolve(JSON.parse(stdout));
+  });
+
+  return deferredPluginList.promise.then(packageJson => {
+    // list all packages
+    let packageArray = Object.keys(packageJson.dependencies);
+
+    //filter out pmp plugins
+    return packageArray.filter(pack => (pack.indexOf('pmp-plugin') === 0));
+  });
+};
+
+// available plugin list promise
+let pluginList = pluginsPromise();
 
 /* ===========================================================================
   DETECT STANDALONE MODE
@@ -22,12 +44,12 @@ process.argv.map(function(arg){
 /* ===========================================================================
   BROWSER SYNC PROCESS CONFIG
 =========================================================================== */
-let bsConfigExtend = function(basicConfig){
+let bsConfigExtend = function(basicConfig, pluginsHelpersBundle){
   //clone bsOptions
   var extendedConfig = Object.assign({}, basicConfig.bsOptions);
 
   //add modifier middleware + pimp commands
-  extendedConfig.middleware.push(require('./middlewares/html-resp-modifier')(basicConfig.pimpCmds));
+  extendedConfig.middleware.push(require('./middlewares/html-resp-modifier')(basicConfig.pimpCmds, pluginsHelpersBundle));
 
   //switch between creating a new browser tab OR reusing the existing one (restart cases)
   process.argv.map(function(arg){
@@ -38,14 +60,6 @@ let bsConfigExtend = function(basicConfig){
   });
 
   return extendedConfig;
-}
-
-/* ===========================================================================
-  TARGET PLUGIN (react render bits and helper functions)
-=========================================================================== */
-let targetPlugin = {
-  components: require('./plugins/reactCmpnt/liferay-v7'),
-  helpers: require('./plugins/helpers/liferay-v7-rules-helpers')
 }
 
 /* ===========================================================================
@@ -69,10 +83,6 @@ gulp.task('compile-css-and-livereload', require('./tasksRunnerFiles/tasks/styles
 /* == SCRIPTS TASKS == */
 // lint + soucemaps + concat + minify
 gulp.task('process-js', require('./tasksRunnerFiles/tasks/scripts-tasks')(gulp, gulpPlugins, gulpConf.scriptsCfg));
-
-/* == HTML TASKS == */
-// render static react cmpnts
-gulp.task('process-html', require('./tasksRunnerFiles/tasks/html-tasks')(gulp, gulpPlugins, gulpConf.htmlCfg, targetPlugin));
 
 /* == BUILD TASKS == */
 //generate dist files
@@ -109,9 +119,7 @@ gulp.task('default', function(cb) {
     if(process.send) process.send({type: 'INITIATED', msg:'awaiting config'});
   } else {
     //start proxy server with config described in gulpConfigChunks
-    gulp.task('run-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').run(browserSync, bsConfigExtend(gulpConf.browserSyncCfg)));
-    gulp.task('reload-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').reload(browserSync));
-    gulp.run('watch');
+    pluginList.then(pmpGulpLaunch);
   }
 });
 
@@ -127,9 +135,62 @@ process.on('message', function (data) {
         
             /* == BROWSER SYNC TASKS == */
             //start proxy server with targeteted config
-            gulp.task('run-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').run(browserSync, bsConfigExtend(gulpConf.browserSyncCfg)));
-            gulp.task('reload-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').reload(browserSync));
-            gulp.run('watch');
+            pluginList.then(pmpGulpLaunch);
         break;
     };
 });
+
+/* ===========================================================================
+  PMP GULP LAUNCHER (ensure pluginlist & config are ready before doing so)
+=========================================================================== */
+let pmpGulpLaunch = (availablePlugins) => {
+  // resolve plugins bundle
+  if(process.send) process.send({type: 'CONFIG READY', msg:'processing config'});
+  pluginBuilderPromise(gulpConf.browserSyncCfg.plugins, availablePlugins).then(pluginsBundle => {
+    // PIMP configuration extend & plugins bundle binding
+    let finalConfig = bsConfigExtend(gulpConf.browserSyncCfg, pluginsBundle.helpers);
+
+    /* == HTML TASKS == */
+    // render static react cmpnts
+    gulp.task('process-html', require('./tasksRunnerFiles/tasks/html-tasks')(gulp, gulpPlugins, gulpConf.htmlCfg, pluginsBundle.htmlHelpers));
+
+    /* == BrowserSync TASKS == */
+    gulp.task('run-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').run(browserSync, finalConfig));
+    gulp.task('reload-bs', require('./tasksRunnerFiles/tasks/browser-sync-tasks').reload(browserSync));
+    
+    // launch server
+    if(process.send) process.send({type: 'CONFIG READY', msg:'launching server'});
+    gulp.run('watch');
+  }).done();
+};
+
+/* ===========================================================================
+  PLUGIN BUILDER PROMISER
+=========================================================================== */
+let pluginBuilderPromise = (pluginConfig, availablePlugins) => {
+  let deferredPluginBundle = Q.defer();
+
+  // match plugin list to available plugins
+  let pluginListToProcess = pluginConfig.filter(n => (availablePlugins.indexOf(n) !== -1));
+
+  let pluginsBundle = {
+    helpers: {},
+    htmlHelpers: {}
+  };
+  // build bundle
+  pluginListToProcess.forEach(pluginName => {
+    let pluginPackage = require(pluginName);
+    
+    // add to helper bundle
+    let helpers = Object.assign({}, pluginPackage.ruleHelpers);
+    if(Object.keys(helpers).length !== 0) pluginsBundle.helpers[pluginPackage.ruleHelperObjectName] = helpers;
+
+    // add to HTML helper bundle | clone plugin components & add components to existing ones (beware in name collision)
+    let htmlHelpers = Object.assign({}, pluginPackage.htmlHelpers);
+    if(Object.keys(htmlHelpers).length !== 0) pluginsBundle.htmlHelpers = Object.assign(pluginsBundle.htmlHelpers, htmlHelpers);
+  });
+  
+  deferredPluginBundle.resolve(pluginsBundle);
+
+  return deferredPluginBundle.promise;
+};

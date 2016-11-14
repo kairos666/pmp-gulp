@@ -33,7 +33,7 @@ let scriptsCfg = {
 */
 let htmlCfg = {
     htmlFilePaths: ['src/partials/**/*.html'],
-    postHtmlCfg: ['posthtml-lorem', 'posthtml-static-react'],
+    postHtmlCfg: ['posthtml-static-react'],
     htmlDestPath: 'dist/html/'
 }
 
@@ -59,10 +59,9 @@ let browserSyncCfg = {
         { 
             url:'*/viewarticle*',
             modifs:[`
-                $('head').append('<link rel="stylesheet" type="text/css" href="/css/main.min.css">');
-                $('body').append('<script type="text/javascript" src="/js/main.min.js"></script>');
+                helpers.staples.baseInjects();
                 $('body').addClass('sample-modifier-rules');
-                $('.container').html('<p>replaced text</p>');
+                $('.container').html(helpers.staples.htmlPartial('sample-staples.html'));
             `] 
         },
         { 
@@ -73,6 +72,10 @@ let browserSyncCfg = {
                 $('body').addClass('sample-modifier-rules2');
             `] 
         }
+    ],
+    plugins: [
+        'pmp-plugin-staples',
+        'pmp-plugin-liferay-v7'
     ]
 }
 
