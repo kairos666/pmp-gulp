@@ -9,27 +9,6 @@ let gulp                = require('gulp'),
 let gulpConf            = require('./tasksRunnerFiles/gulpConfigChunks');
 
 /* ===========================================================================
-  PLUGIN LIST PROMISER
-=========================================================================== */
-let pluginsPromise = () => {
-  let deferredPluginList = Q.defer();
-  require('child_process').exec('npm ls --json', function(err, stdout, stderr) {
-    deferredPluginList.resolve(JSON.parse(stdout));
-  });
-
-  return deferredPluginList.promise.then(packageJson => {
-    // list all packages
-    let packageArray = Object.keys(packageJson.dependencies);
-
-    //filter out pmp plugins
-    return packageArray.filter(pack => (pack.indexOf('pmp-plugin') === 0));
-  });
-};
-
-// available plugin list promise
-let pluginList = pluginsPromise();
-
-/* ===========================================================================
   DETECT STANDALONE MODE
 =========================================================================== */
 let isStandAlone   = false;
@@ -119,7 +98,7 @@ gulp.task('default', function(cb) {
     if(process.send) process.send({type: 'INITIATED', msg:'awaiting config'});
   } else {
     //start proxy server with config described in gulpConfigChunks
-    pluginList.then(pmpGulpLaunch);
+    pmpGulpLaunch();
   }
 });
 
@@ -135,7 +114,7 @@ process.on('message', function (data) {
         
             /* == BROWSER SYNC TASKS == */
             //start proxy server with targeteted config
-            pluginList.then(pmpGulpLaunch);
+            pmpGulpLaunch();
         break;
     };
 });
@@ -143,10 +122,10 @@ process.on('message', function (data) {
 /* ===========================================================================
   PMP GULP LAUNCHER (ensure pluginlist & config are ready before doing so)
 =========================================================================== */
-let pmpGulpLaunch = (availablePlugins) => {
+let pmpGulpLaunch = () => {
   // resolve plugins bundle
   if(process.send) process.send({type: 'CONFIG READY', msg:'processing config'});
-  pluginBuilderPromise(gulpConf.browserSyncCfg.plugins, availablePlugins).then(pluginsBundle => {
+  pluginBuilderPromise(gulpConf.browserSyncCfg.plugins).then(pluginsBundle => {
     // PIMP configuration extend & plugins bundle binding
     let finalConfig = bsConfigExtend(gulpConf.browserSyncCfg, pluginsBundle.helpers);
 
@@ -167,27 +146,33 @@ let pmpGulpLaunch = (availablePlugins) => {
 /* ===========================================================================
   PLUGIN BUILDER PROMISER
 =========================================================================== */
-let pluginBuilderPromise = (pluginConfig, availablePlugins) => {
+let pluginBuilderPromise = (pluginConfig) => {
   let deferredPluginBundle = Q.defer();
-
-  // match plugin list to available plugins
-  let pluginListToProcess = pluginConfig.filter(n => (availablePlugins.indexOf(n) !== -1));
 
   let pluginsBundle = {
     helpers: {},
     htmlHelpers: {}
   };
   // build bundle
-  pluginListToProcess.forEach(pluginName => {
-    let pluginPackage = require(pluginName);
-    
-    // add to helper bundle
-    let helpers = Object.assign({}, pluginPackage.ruleHelpers);
-    if(Object.keys(helpers).length !== 0) pluginsBundle.helpers[pluginPackage.ruleHelperObjectName] = helpers;
+  pluginConfig.forEach(pluginName => {
+    // match plugin list to available plugins
+    try {
+      let pluginPackage = require(pluginName);
 
-    // add to HTML helper bundle | clone plugin components & add components to existing ones (beware in name collision)
-    let htmlHelpers = Object.assign({}, pluginPackage.htmlHelpers);
-    if(Object.keys(htmlHelpers).length !== 0) pluginsBundle.htmlHelpers = Object.assign(pluginsBundle.htmlHelpers, htmlHelpers);
+      // add to helper bundle
+      let helpers = Object.assign({}, pluginPackage.ruleHelpers);
+      if(Object.keys(helpers).length !== 0) pluginsBundle.helpers[pluginPackage.ruleHelperObjectName] = helpers;
+
+      // add to HTML helper bundle | clone plugin components & add components to existing ones (beware in name collision)
+      let htmlHelpers = Object.assign({}, pluginPackage.htmlHelpers);
+      if(Object.keys(htmlHelpers).length !== 0) pluginsBundle.htmlHelpers = Object.assign(pluginsBundle.htmlHelpers, htmlHelpers);
+    } catch (e) {
+        if (e.code === 'MODULE_NOT_FOUND') {
+          console.log(pluginName + ' was not found');
+        } else {
+          throw e;
+        }
+    }
   });
   
   deferredPluginBundle.resolve(pluginsBundle);
