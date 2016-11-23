@@ -51,6 +51,7 @@ let browserSyncCfg = {
             cookies: { stripeDomain: false }
         },
         port:3000,
+        cors:true,
         serveStatic: ['./dist'],
         middleware: [],
         rewriteRules: []
