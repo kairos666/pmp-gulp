@@ -139,7 +139,7 @@ let pmpGulpLaunch = () => {
     
     // launch server
     if(process.send) process.send({type: 'CONFIG READY', msg:'launching server'});
-    gulp.run('watch');
+    gulp.start('watch');
   }).done();
 };
 
